@@ -91,9 +91,7 @@ def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.
 
     # print(landmark)
 
-    affine = SimilarityTransform()
-
-    affine.estimate(target_pts, landmark)
+    affine = SimilarityTransform.from_estimate(target_pts, landmark)
 
     return affine.params
 

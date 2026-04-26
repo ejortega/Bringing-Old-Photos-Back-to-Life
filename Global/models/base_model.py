@@ -64,7 +64,7 @@ class BaseModel(torch.nn.Module):
         if not os.path.isfile(save_path):
             print("%s not exists yet!" % save_path)
         else:
-            optimizer.load_state_dict(torch.load(save_path))
+            optimizer.load_state_dict(torch.load(save_path, weights_only=True))
 
     # helper loading function that can be used by subclasses
     def load_network(self, network, network_label, epoch_label, save_dir=""):
@@ -83,9 +83,9 @@ class BaseModel(torch.nn.Module):
             # network.load_state_dict(torch.load(save_path))
             try:
                 # print(save_path)
-                network.load_state_dict(torch.load(save_path))
+                network.load_state_dict(torch.load(save_path, weights_only=True))
             except:
-                pretrained_dict = torch.load(save_path)
+                pretrained_dict = torch.load(save_path, weights_only=True)
                 model_dict = network.state_dict()
                 try:
                     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}

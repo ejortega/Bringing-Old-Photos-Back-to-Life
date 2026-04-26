@@ -138,9 +138,7 @@ def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.
 
     # print(landmark)
 
-    affine = SimilarityTransform()
-
-    affine.estimate(target_pts, landmark)
+    affine = SimilarityTransform.from_estimate(target_pts, landmark)
 
     return affine
 
@@ -159,9 +157,7 @@ def compute_inverse_transformation_matrix(img, landmark, normalize, target_face_
 
     # print(landmark)
 
-    affine = SimilarityTransform()
-
-    affine.estimate(landmark, target_pts)
+    affine = SimilarityTransform.from_estimate(landmark, target_pts)
 
     return affine
 
@@ -216,7 +212,7 @@ def blur_blending(im1, im2, mask):
 
 def blur_blending_cv2(im1, im2, mask):
 
-    mask *= 255.0
+    mask = mask.astype(np.float32) * 255.0
 
     kernel = np.ones((9, 9), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=3)

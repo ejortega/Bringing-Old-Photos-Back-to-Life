@@ -130,7 +130,7 @@ def natural_keys(text):
     http://nedbatchelder.com/blog/200712/human_sorting.html
     (See Toothy's implementation in the comments)
     """
-    return [atoi(c) for c in re.split("(\d+)", text)]
+    return [atoi(c) for c in re.split(r"(\d+)", text)]
 
 
 def natural_sort(items):
@@ -177,7 +177,7 @@ def load_network(net, label, epoch, opt):
     save_dir = os.path.join(opt.checkpoints_dir, opt.name)
     save_path = os.path.join(save_dir, save_filename)
     if os.path.exists(save_path):
-        weights = torch.load(save_path)
+        weights = torch.load(save_path, weights_only=True)
         net.load_state_dict(weights)
     return net
 

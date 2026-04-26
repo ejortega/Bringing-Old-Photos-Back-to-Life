@@ -1,11 +1,12 @@
 import numpy as np
 import cv2
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import os.path
 import argparse
 import os
 import sys
 import shutil
+import tempfile
 from subprocess import call
 
 def modify(image_filename=None, cv2_frame=None):
@@ -188,20 +189,25 @@ while True:
         break
 
     elif event == '-MPHOTO-':
+        gui_cwd = os.getcwd()
+        staging = tempfile.mkdtemp(prefix="bopbl_in_")
         try:
-            n1 = filename.split("/")[-2]
-            n2 = filename.split("/")[-3]
-            n3 = filename.split("/")[-1]
-            filename= str(f"./{n2}/{n1}")
-            modify(filename)
-           
-            global f_image
-            f_image = f'./output/final_output/{n3}'
+            basename = os.path.basename(filename)
+            shutil.copy(filename, os.path.join(staging, basename))
+            shutil.rmtree(os.path.join(gui_cwd, 'output'), ignore_errors=True)
+            modify(staging)
+
+            f_image = os.path.join(gui_cwd, 'output', 'final_output', basename)
             image = cv2.imread(f_image)
-            window['-OUT-'].update(data=cv2.imencode('.png', image)[1].tobytes())
-            
-        except:
-            continue
+            if image is not None:
+                window['-OUT-'].update(data=cv2.imencode('.png', image)[1].tobytes())
+            else:
+                print(f"No output found at {f_image}")
+        except Exception as e:
+            print(f"Modify failed: {e}")
+        finally:
+            os.chdir(gui_cwd)
+            shutil.rmtree(staging, ignore_errors=True)
 
     elif event == '-IN FILE-':      # A single filename was chosen
         filename = values['-IN FILE-']
