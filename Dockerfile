@@ -1,43 +1,41 @@
-FROM nvidia/cuda:11.1-base-ubuntu20.04
+FROM nvidia/cuda:13.2.1-base-ubuntu24.04
 
-RUN apt update && DEBIAN_FRONTEND=noninteractive apt install git bzip2 wget unzip python3-pip python3-dev cmake libgl1-mesa-dev python-is-python3 libgtk2.0-dev -yq
-ADD . /app
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ENV DEBIAN_FRONTEND=noninteractive \
+  UV_LINK_MODE=copy \
+  UV_PROJECT_ENVIRONMENT=/app/.venv
+
+RUN apt update && apt install -yq \
+  git bzip2 wget unzip cmake build-essential \
+  libgl1 libglib2.0-0 libgtk2.0-0 \
+  && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
-RUN cd Face_Enhancement/models/networks/ &&\
-  git clone https://github.com/vacancy/Synchronized-BatchNorm-PyTorch &&\
-  cp -rf Synchronized-BatchNorm-PyTorch/sync_batchnorm . &&\
-  cd ../../../
 
-RUN cd Global/detection_models &&\
-  git clone https://github.com/vacancy/Synchronized-BatchNorm-PyTorch &&\
-  cp -rf Synchronized-BatchNorm-PyTorch/sync_batchnorm . &&\
-  cd ../../
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project
 
-RUN cd Face_Detection/ &&\
-  wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2 &&\
-  bzip2 -d shape_predictor_68_face_landmarks.dat.bz2 &&\
-  cd ../ 
+COPY . /app
 
-RUN cd Face_Enhancement/ &&\
-  wget https://facevc.blob.core.windows.net/zhanbo/old_photo/pretrain/Face_Enhancement/checkpoints.zip &&\
-  unzip checkpoints.zip &&\
-  cd ../ &&\
-  cd Global/ &&\
-  wget https://facevc.blob.core.windows.net/zhanbo/old_photo/pretrain/Global/checkpoints.zip &&\
-  unzip checkpoints.zip &&\
-  rm -f checkpoints.zip &&\
-  cd ../
+RUN git clone --depth=1 https://github.com/vacancy/Synchronized-BatchNorm-PyTorch /tmp/sbn && \
+  cp -rf /tmp/sbn/sync_batchnorm Face_Enhancement/models/networks/ && \
+  cp -rf /tmp/sbn/sync_batchnorm Global/detection_models/ && \
+  rm -rf /tmp/sbn
 
-RUN pip3 install numpy
+RUN cd Face_Detection && \
+  wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2 && \
+  bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
 
-RUN pip3 install dlib
+RUN cd Face_Enhancement && \
+  wget https://github.com/microsoft/Bringing-Old-Photos-Back-to-Life/releases/download/v1.0/face_checkpoints.zip && \
+  unzip face_checkpoints.zip && \
+  rm -f face_checkpoints.zip
 
-RUN pip3 install -r requirements.txt
+RUN cd Global && \
+  wget https://github.com/microsoft/Bringing-Old-Photos-Back-to-Life/releases/download/v1.0/global_checkpoints.zip && \
+  unzip global_checkpoints.zip && \
+  rm -f global_checkpoints.zip
 
-RUN git clone https://github.com/NVlabs/SPADE.git
-
-RUN cd SPADE/ && pip3 install -r requirements.txt
-
-RUN cd ..
-
-CMD ["python3", "run.py"]
+ENTRYPOINT ["uv", "run", "python", "run.py"]
+CMD ["--help"]
